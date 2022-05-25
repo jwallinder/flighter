@@ -1,3 +1,4 @@
+#include <HCSR04.h>
 #include <Servo.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
@@ -13,10 +14,19 @@ float gyroAngleXdeg, gyroAngleYdeg, gyroAngleZdeg;
 float elapsedTime, currentTime, previousTime;
 float roll, pitch, yaw;
 Servo servoX, servoY; 
+int servoXval, servoYval;
 int SERVO_X_PIN = 9;
 int SERVO_Y_PIN = 10;
-void displaySensorDetails(void)
-{
+int SERVO_DEFAULT = 90;
+int distanceAngle;
+
+// Initialize sensor that uses digital pins 5 and 6.
+const byte triggerPin = 5;
+const byte echoPin = 6;
+UltraSonicDistanceSensor distanceSensor(triggerPin, echoPin);
+float distanceCm;
+
+void displaySensorDetails(void) {
   sensor_t sensor;
   gyro.getSensor(&sensor);
   Serial.println("------------------------------------");
@@ -43,8 +53,8 @@ void setup(void)
   /* setup servos */
   servoX.attach(SERVO_X_PIN);
   servoY.attach(SERVO_Y_PIN);
-  servoX.write(90);
-  servoY.write(90);
+  servoX.write(SERVO_DEFAULT);
+  servoY.write(SERVO_DEFAULT);
    
   
   /* Enable auto-ranging */
@@ -125,8 +135,33 @@ void loop(void)
   
   //Serial.print("gyroAngleX: "); Serial.print(gyroAngleX); Serial.print(" "); 
 
-  servoX.write(gyroAngleXdeg+90); //just write the gyro angle to servo
-  servoY.write(gyroAngleYdeg+90); //just write the gyro angle to servo
+  // read the distance 
+  distanceCm = distanceSensor.measureDistanceCm();
+  Serial.print("distance: "); Serial.print(distanceCm); Serial.print("cm ");
+
+
+  // distances from 2cm to 12cm avaw adds 5deg/cm
+  // 2cm => -25
+  // 7cm => 0
+  // 12cm => 25
+  
+  
+  if (distanceCm >= 2 && distanceCm <= 12) {
+    distanceAngle = 5* (distanceCm - 7);     
+  } else if (distanceCm >= 0 &&  distanceCm <2) {
+    distanceAngle = -25;
+  } else if (distanceCm >= 12){
+    distanceAngle = 25; 
+  }
+  
+  Serial.print("distanceAngle: "); Serial.print(distanceAngle); Serial.print("deg ");
+  
+  servoXval = SERVO_DEFAULT + gyroAngleXdeg + distanceAngle;
+  servoYval = SERVO_DEFAULT + gyroAngleYdeg + distanceAngle;
+  
+
+  servoX.write(servoXval); //just write the gyro angle to servo
+  servoY.write(servoYval); //just write the gyro angle to servo
     
   outputX();
   outputY();
