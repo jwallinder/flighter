@@ -1,3 +1,4 @@
+#include <Servo.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_L3GD20_U.h>
@@ -11,7 +12,9 @@ float gyroAngleX, gyroAngleY, gyroAngleZ;
 float gyroAngleXdeg, gyroAngleYdeg, gyroAngleZdeg;
 float elapsedTime, currentTime, previousTime;
 float roll, pitch, yaw;
-
+Servo servoX, servoY; 
+int SERVO_X_PIN = 9;
+int SERVO_Y_PIN = 10;
 void displaySensorDetails(void)
 {
   sensor_t sensor;
@@ -32,6 +35,17 @@ void setup(void)
 {
   Serial.begin(9600);
   Serial.println("Gyroscope Test"); Serial.println("");
+
+  /* calibration light */
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
+
+  /* setup servos */
+  servoX.attach(SERVO_X_PIN);
+  servoY.attach(SERVO_Y_PIN);
+  servoX.write(90);
+  servoY.write(90);
+   
   
   /* Enable auto-ranging */
   gyro.enableAutoRange(true);
@@ -66,6 +80,7 @@ void setup(void)
     delay(4);                                        //Wait 4 milliseconds before the next loop
   }
 
+  digitalWrite(LED_BUILTIN, HIGH);    //calibration done, turn on led
   Serial.println(" done!");                          //2000 measures are done!
   gyroXcal /= calibrationCount;
   gyroYcal /= calibrationCount;
@@ -110,9 +125,12 @@ void loop(void)
   
   //Serial.print("gyroAngleX: "); Serial.print(gyroAngleX); Serial.print(" "); 
 
+  servoX.write(gyroAngleXdeg+90); //just write the gyro angle to servo
+  servoY.write(gyroAngleYdeg+90); //just write the gyro angle to servo
+    
   outputX();
   outputY();
-  outputZ();
+//  outputZ();
   
   Serial.println();
   delay(10);
